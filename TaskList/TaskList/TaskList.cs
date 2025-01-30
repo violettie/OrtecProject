@@ -49,6 +49,9 @@ namespace TaskList
                 case "show":
                     Show();
                     break;
+                case "today":
+                    Today();
+                    break;
                 case "add":
                     Add(commandRest[1]);
                     break;
@@ -79,6 +82,23 @@ namespace TaskList
                 {
                     console.WriteLine($"    [{(task.Done ? 'x' : ' ')}] " +
                         $"{task.Id}: {task.Description} {task.Deadline.ToString() ?? "" }");
+                }
+                console.WriteLine();
+            }
+        }
+
+        private void Today()
+        {
+            foreach (var project in tasks)
+            {
+                var todaysTasks = project.Value.Where(t => t.Deadline != null 
+                    && t.Deadline.Value.Date == DateTime.Now.Date).ToList();
+
+                console.WriteLine(project.Key);
+                foreach (var task in todaysTasks)
+                {
+                    console.WriteLine($"    [{(task.Done ? 'x' : ' ')}] " +
+                        $"{task.Id}: {task.Description} {task.Deadline.ToString() ?? ""}");
                 }
                 console.WriteLine();
             }
@@ -169,6 +189,7 @@ namespace TaskList
         {
             console.WriteLine("Commands:");
             console.WriteLine("  show");
+            console.WriteLine("  today");
             console.WriteLine("  add project <project name>");
             console.WriteLine("  add task <project name> <task description>");
             console.WriteLine("  check <task ID>");
