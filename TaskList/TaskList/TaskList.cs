@@ -80,8 +80,9 @@ namespace TaskList
                 console.WriteLine(project.Key);
                 foreach (var task in project.Value)
                 {
+                    var deadlineString = task.Deadline.HasValue ? " " + task.Deadline.ToString() : "";
                     console.WriteLine($"    [{(task.Done ? 'x' : ' ')}] " +
-                        $"{task.Id}: {task.Description} {task.Deadline.ToString() ?? "" }");
+                        $"{task.Id}: {task.Description}{deadlineString}");
                 }
                 console.WriteLine();
             }
@@ -97,8 +98,9 @@ namespace TaskList
                 console.WriteLine(project.Key);
                 foreach (var task in todaysTasks)
                 {
+                    var deadlineString = task.Deadline.HasValue ? " " + task.Deadline.ToString() : "";
                     console.WriteLine($"    [{(task.Done ? 'x' : ' ')}] " +
-                        $"{task.Id}: {task.Description} {task.Deadline.ToString() ?? ""}");
+                        $"{task.Id}: {task.Description}{deadlineString}");
                 }
                 console.WriteLine();
             }
