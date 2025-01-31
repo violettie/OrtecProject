@@ -64,6 +64,9 @@ namespace TaskList
                 case "deadline":
                     AddDeadline(commandRest[1]);
                     break;
+                case "view-by-deadline":
+                    ViewByDeadline();
+                    break;
                 case "help":
                     Help();
                     break;
@@ -92,7 +95,7 @@ namespace TaskList
         {
             foreach (var project in tasks)
             {
-                var todaysTasks = project.Value.Where(t => t.Deadline != null 
+                var todaysTasks = project.Value.Where(t => t.Deadline != null
                     && t.Deadline.Value.Date == DateTime.Now.Date).ToList();
 
                 console.WriteLine(project.Key);
@@ -187,6 +190,38 @@ namespace TaskList
             }
         }
 
+        private void ViewByDeadline()
+        {
+            var tasksWithoutDeadlines = tasks.Values.SelectMany(t => t.Where(task => !task.Deadline.HasValue)).ToList();
+
+            var sortedTasks = tasks
+                .SelectMany(project => project.Value)
+                .Where(task => task.Deadline.HasValue)
+                .GroupBy(task => task.Deadline.Value.Date)
+                .OrderBy(group => group.Key)
+                .ToDictionary(group => group.Key.ToShortDateString(), group => group.OrderBy(task => task.Deadline).ToList());
+
+            foreach (var project in sortedTasks)
+            {
+                console.WriteLine(project.Key.ToString());
+                foreach (var task in project.Value)
+                {
+                    console.WriteLine($"    {task.Id}: {task.Description}");
+                }
+                console.WriteLine();
+            }
+
+            if (tasksWithoutDeadlines.Count > 0)
+            {
+                console.WriteLine("No deadline:");
+                foreach (var task in tasksWithoutDeadlines)
+                { 
+                    console.WriteLine($"    {task.Id}: {task.Description}");
+                }
+                console.WriteLine();
+            }
+        }
+
         private void Help()
         {
             console.WriteLine("Commands:");
@@ -197,6 +232,7 @@ namespace TaskList
             console.WriteLine("  check <task ID>");
             console.WriteLine("  uncheck <task ID>");
             console.WriteLine("  deadline <task ID> <date>");
+            console.WriteLine("  view-by-deadline");
             console.WriteLine();
         }
 
