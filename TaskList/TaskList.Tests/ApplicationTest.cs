@@ -78,6 +78,37 @@ namespace Tasks
 				""
 			);
 
+			Execute($"deadline 1 {DateTime.Today}");
+			Execute($"deadline 2 {DateTime.Today.AddDays(-1)}");
+			Execute($"deadline 3 {DateTime.Today}");
+			Execute($"deadline 4 {DateTime.Today.AddDays(1)}");
+
+			Execute("show");
+			ReadLines(
+				"secrets",
+				$"    [x] 1: Eat more donuts. {DateTime.Today}",
+				$"    [ ] 2: Destroy all humans. {DateTime.Today.AddDays(-1)}",
+				"",
+				"training",
+				$"    [x] 3: Four Elements of Simple Design {DateTime.Today}",
+				$"    [ ] 4: SOLID {DateTime.Today.AddDays(1)}",
+				"    [x] 5: Coupling and Cohesion",
+				"    [x] 6: Primitive Obsession",
+				"    [ ] 7: Outside-In TDD",
+				"    [ ] 8: Interaction-Driven Design",
+				""
+			);
+
+			Execute("today");
+			ReadLines(
+				"secrets",
+				$"    [x] 1: Eat more donuts. {DateTime.Today}",
+				"",
+				"training",
+				$"    [x] 3: Four Elements of Simple Design {DateTime.Today}",
+				""
+			);
+
 			Execute("quit");
 		}
 
