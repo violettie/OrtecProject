@@ -43,7 +43,7 @@ namespace TaskList
 
         private void Execute(string commandLine)
         {
-            var commandRest = commandLine.Split(" ".ToCharArray(), 2);
+            var commandRest = SplitCommandLine(commandLine);
             var command = commandRest[0];
             switch (command)
             {
@@ -112,7 +112,7 @@ namespace TaskList
 
         private void Add(string commandLine)
         {
-            var subcommandRest = commandLine.Split(" ".ToCharArray(), 2);
+            var subcommandRest = SplitCommandLine(commandLine);
             var subcommand = subcommandRest[0];
             if (subcommand == "project")
             {
@@ -120,7 +120,7 @@ namespace TaskList
             }
             else if (subcommand == "task")
             {
-                var projectTask = subcommandRest[1].Split(" ".ToCharArray(), 2);
+                var projectTask = SplitCommandLine(subcommandRest[1]);
                 AddTask(projectTask[0], projectTask[1]);
             }
         }
@@ -168,7 +168,7 @@ namespace TaskList
 
         private void AddDeadline(string commandLine)
         {
-            var subcommandRest = commandLine.Split(" ".ToCharArray(), 2);
+            var subcommandRest = SplitCommandLine(commandLine);
             string deadline = subcommandRest[1];
             string idString = subcommandRest[0];
             if (DateTime.TryParse(deadline, out DateTime deadlineDate))
@@ -261,6 +261,11 @@ namespace TaskList
         private long NextId()
         {
             return ++lastId;
+        }
+
+        private string?[] SplitCommandLine(string commandLine)
+        {
+            return commandLine.Split(" ".ToCharArray(), 2);
         }
     }
 }
