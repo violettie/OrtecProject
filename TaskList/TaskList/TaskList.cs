@@ -192,21 +192,34 @@ namespace TaskList
 
         private void ViewByDeadline()
         {
-            var tasksWithoutDeadlines = tasks.Values.SelectMany(t => t.Where(task => !task.Deadline.HasValue)).ToList();
+            var tasksWithoutDeadlines = tasks.Where(kvp => kvp.Value.Any(task => !task.Deadline.HasValue))
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Where(task => !task.Deadline.HasValue).ToList());
 
-            var sortedTasks = tasks
-                .SelectMany(project => project.Value)
-                .Where(task => task.Deadline.HasValue)
-                .GroupBy(task => task.Deadline.Value.Date)
+            var sortedTasks = tasks.SelectMany(project =>
+            project.Value.Select(task => new { ProjectName = project.Key, Task = task }))
+                .Where(x => x.Task.Deadline.HasValue)
+                .GroupBy(x => x.Task.Deadline.Value.Date)
                 .OrderBy(group => group.Key)
-                .ToDictionary(group => group.Key.ToShortDateString(), group => group.OrderBy(task => task.Deadline).ToList());
+                .ToDictionary(
+                    group => group.Key.ToShortDateString(),
+                    group => group.GroupBy(p => p.ProjectName)
+                    .ToDictionary(
+                        projectGroup => projectGroup.Key,
+                        projectGroup => projectGroup.Select(t => t.Task).ToList()));
 
             foreach (var project in sortedTasks)
             {
-                console.WriteLine(project.Key.ToString());
+                console.WriteLine(project.Key.ToString() + ":");
                 foreach (var task in project.Value)
                 {
-                    console.WriteLine($"    {task.Id}: {task.Description}");
+                    console.WriteLine($"    {task.Key.ToString()}:");
+                    foreach (var subTask in task.Value)
+                    {
+                        console.WriteLine($"        {subTask.Id}: {subTask.Description}");
+                    }
+                    console.WriteLine();
                 }
                 console.WriteLine();
             }
@@ -214,9 +227,14 @@ namespace TaskList
             if (tasksWithoutDeadlines.Count > 0)
             {
                 console.WriteLine("No deadline:");
-                foreach (var task in tasksWithoutDeadlines)
-                { 
-                    console.WriteLine($"    {task.Id}: {task.Description}");
+                foreach (var project in tasksWithoutDeadlines)
+                {
+                    console.WriteLine($"    {project.Key.ToString()}:");
+                    foreach (var task in project.Value)
+                    {
+                        console.WriteLine($"        {task.Id}: {task.Description}");
+                    }
+                    console.WriteLine();
                 }
                 console.WriteLine();
             }
