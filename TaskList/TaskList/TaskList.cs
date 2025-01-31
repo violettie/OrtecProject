@@ -219,7 +219,6 @@ namespace TaskList
                     {
                         console.WriteLine($"        {subTask.Id}: {subTask.Description}");
                     }
-                    console.WriteLine();
                 }
                 console.WriteLine();
             }
@@ -234,7 +233,6 @@ namespace TaskList
                     {
                         console.WriteLine($"        {task.Id}: {task.Description}");
                     }
-                    console.WriteLine();
                 }
                 console.WriteLine();
             }

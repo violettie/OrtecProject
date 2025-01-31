@@ -109,7 +109,32 @@ namespace Tasks
 				""
 			);
 
-			Execute("quit");
+            Execute("view-by-deadline");
+			ReadLines(
+                $"{DateTime.Today.AddDays(-1).ToShortDateString()}:",
+                "    secrets:",
+                $"        2: Destroy all humans.",
+				"",
+                $"{DateTime.Today.ToShortDateString()}:",
+                "    secrets:",
+				$"        1: Eat more donuts.",
+				"    training:",
+				$"        3: Four Elements of Simple Design",
+				"",
+				$"{DateTime.Today.AddDays(1).ToShortDateString()}:",
+				"    training:",
+				$"        4: SOLID",
+				"",
+                "No deadline:",
+                "    training:",
+                "        5: Coupling and Cohesion",
+                "        6: Primitive Obsession",
+                "        7: Outside-In TDD",
+                "        8: Interaction-Driven Design",
+                ""
+                );
+
+            Execute("quit");
 		}
 
 		private void Execute(string command)
