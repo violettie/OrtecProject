@@ -134,7 +134,7 @@ namespace TaskList
         {
             if (!tasks.TryGetValue(project, out IList<Task> projectTasks))
             {
-                Console.WriteLine("Could not find a project with the name \"{0}\".", project);
+                Console.WriteLine($"Could not find a project with the name \"{project}\".");
                 return;
             }
             projectTasks.Add(new Task { Id = NextId(), Description = description, Done = false });
@@ -152,14 +152,10 @@ namespace TaskList
 
         private void SetDone(string idString, bool done)
         {
-            int id = int.Parse(idString);
-            var identifiedTask = tasks
-                .Select(project => project.Value.FirstOrDefault(task => task.Id == id))
-                .Where(task => task != null)
-                .FirstOrDefault();
+            var identifiedTask = FindTaskById(idString);
             if (identifiedTask == null)
             {
-                console.WriteLine("Could not find a task with an ID of {0}.", id);
+                console.WriteLine($"Could not find a task with an ID of {idString}.");
                 return;
             }
 
@@ -173,14 +169,10 @@ namespace TaskList
             string idString = subcommandRest[0];
             if (DateTime.TryParse(deadline, out DateTime deadlineDate))
             {
-                int id = int.Parse(idString);
-                var identifiedTask = tasks
-                    .Select(project => project.Value.FirstOrDefault(task => task.Id == id))
-                    .Where(task => task != null)
-                    .FirstOrDefault();
+                var identifiedTask = FindTaskById(idString);
                 if (identifiedTask == null)
                 {
-                    console.WriteLine("Could not find a task with an ID of {0}.", id);
+                    console.WriteLine($"Could not find a task with an ID of {idString}.");
                     return;
                 }
                 identifiedTask.Deadline = deadlineDate;
@@ -255,7 +247,7 @@ namespace TaskList
 
         private void Error(string command)
         {
-            console.WriteLine("I don't know what the command \"{0}\" is.", command);
+            console.WriteLine($"I don't know what the command \"{command}\" is.");
         }
 
         private long NextId()
@@ -263,9 +255,17 @@ namespace TaskList
             return ++lastId;
         }
 
-        private string?[] SplitCommandLine(string commandLine)
+        private string[] SplitCommandLine(string commandLine)
         {
             return commandLine.Split(" ".ToCharArray(), 2);
+        }
+
+        private Task? FindTaskById(string idString)
+        {
+            int id = int.Parse(idString);
+            return tasks.Select(project => project.Value.FirstOrDefault(task => task.Id == id))
+                .Where(task => task != null)
+                .FirstOrDefault();
         }
     }
 }
