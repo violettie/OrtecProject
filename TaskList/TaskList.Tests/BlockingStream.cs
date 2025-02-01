@@ -1,8 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Threading;
-
-namespace TaskList
+﻿namespace TaskList
 {
 	public class BlockingStream : Stream
 	{

@@ -8,14 +8,14 @@ namespace Tasks
 		public const string PROMPT = "> ";
 
 		private FakeConsole console;
-		private System.Threading.Thread applicationThread;
+		private Thread applicationThread;
 
 		[SetUp]
 		public void StartTheApplication()
 		{
 			this.console = new FakeConsole();
 			var taskList = new TaskList.TaskList(console);
-			this.applicationThread = new System.Threading.Thread(() => taskList.Run());
+			this.applicationThread = new Thread(() => taskList.Run());
 			applicationThread.Start();
 			ReadLines(TaskList.TaskList.startupText);
 		}

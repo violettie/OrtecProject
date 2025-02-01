@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TaskList.Interfaces
+﻿namespace TaskList.Interfaces
 {
     public interface IConsole
     {

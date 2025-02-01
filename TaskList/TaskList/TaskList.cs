@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using TaskList.Interfaces;
+﻿using TaskList.Interfaces;
 
 namespace TaskList
 {
@@ -134,7 +130,7 @@ namespace TaskList
         {
             if (!tasks.TryGetValue(project, out IList<Task> projectTasks))
             {
-                Console.WriteLine($"Could not find a project with the name \"{project}\".");
+                console.WriteLine($"Could not find a project with the name \"{project}\".");
                 return;
             }
             projectTasks.Add(new Task { Id = NextId(), Description = description, Done = false });
