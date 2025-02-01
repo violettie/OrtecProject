@@ -78,12 +78,7 @@ namespace TaskList
             foreach (var project in tasks)
             {
                 console.WriteLine(project.Key);
-                foreach (var task in project.Value)
-                {
-                    var deadlineString = task.Deadline.HasValue ? " " + task.Deadline.ToString() : "";
-                    console.WriteLine($"    [{(task.Done ? 'x' : ' ')}] " +
-                        $"{task.Id}: {task.Description}{deadlineString}");
-                }
+                WriteTasks(project.Value);
                 console.WriteLine();
             }
         }
@@ -96,12 +91,7 @@ namespace TaskList
                     && t.Deadline.Value.Date == DateTime.Now.Date).ToList();
 
                 console.WriteLine(project.Key);
-                foreach (var task in todaysTasks)
-                {
-                    var deadlineString = task.Deadline.HasValue ? " " + task.Deadline.ToString() : "";
-                    console.WriteLine($"    [{(task.Done ? 'x' : ' ')}] " +
-                        $"{task.Id}: {task.Description}{deadlineString}");
-                }
+                WriteTasks(todaysTasks);
                 console.WriteLine();
             }
         }
@@ -201,28 +191,14 @@ namespace TaskList
             foreach (var project in sortedTasks)
             {
                 console.WriteLine(project.Key.ToString() + ":");
-                foreach (var task in project.Value)
-                {
-                    console.WriteLine($"    {task.Key.ToString()}:");
-                    foreach (var subTask in task.Value)
-                    {
-                        console.WriteLine($"        {subTask.Id}: {subTask.Description}");
-                    }
-                }
+                WriteTasksByDeadline(project.Value);
                 console.WriteLine();
             }
 
             if (tasksWithoutDeadlines.Count > 0)
             {
                 console.WriteLine("No deadline:");
-                foreach (var project in tasksWithoutDeadlines)
-                {
-                    console.WriteLine($"    {project.Key.ToString()}:");
-                    foreach (var task in project.Value)
-                    {
-                        console.WriteLine($"        {task.Id}: {task.Description}");
-                    }
-                }
+                WriteTasksByDeadline(tasksWithoutDeadlines);
                 console.WriteLine();
             }
         }
@@ -254,6 +230,28 @@ namespace TaskList
         private string[] SplitCommandLine(string commandLine)
         {
             return commandLine.Split(" ".ToCharArray(), 2);
+        }
+
+        private void WriteTasks(IList<Task> tasks)
+        {
+            foreach (var task in tasks)
+            {
+                var deadlineString = task.Deadline.HasValue ? " " + task.Deadline.ToString() : "";
+                console.WriteLine($"    [{(task.Done ? 'x' : ' ')}] " +
+                    $"{task.Id}: {task.Description}{deadlineString}");
+            }
+        }
+
+        private void WriteTasksByDeadline(IDictionary<string, List<Task>> tasks)
+        {
+            foreach (var project in tasks)
+            {
+                console.WriteLine($"    {project.Key.ToString()}:");
+                foreach (var task in project.Value)
+                {
+                    console.WriteLine($"        {task.Id}: {task.Description}");
+                }
+            }
         }
 
         private Task? FindTaskById(string idString)
