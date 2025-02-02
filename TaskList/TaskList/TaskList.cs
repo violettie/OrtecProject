@@ -7,7 +7,7 @@ namespace TaskList
         private const string QUIT = "quit";
         public static readonly string startupText = "Welcome to TaskList! Type 'help' for available commands.";
 
-        private readonly IDictionary<string, IList<Task>> tasks = new Dictionary<string, IList<Task>>();
+        private readonly IList<IProject> tasks = new List<IProject>();
         private readonly IConsole console;
 
         private long lastId = 0;
@@ -77,8 +77,8 @@ namespace TaskList
         {
             foreach (var project in tasks)
             {
-                console.WriteLine(project.Key);
-                WriteTasks(project.Value);
+                console.WriteLine(project.Name);
+                WriteTasks(project.Tasks);
                 console.WriteLine();
             }
         }
@@ -87,10 +87,10 @@ namespace TaskList
         {
             foreach (var project in tasks)
             {
-                var todaysTasks = project.Value.Where(t => t.Deadline != null
+                var todaysTasks = project.Tasks.Where(t => t.Deadline != null
                     && t.Deadline.Value.Date == DateTime.Now.Date).ToList();
 
-                console.WriteLine(project.Key);
+                console.WriteLine(project.Name);
                 WriteTasks(todaysTasks);
                 console.WriteLine();
             }
@@ -113,17 +113,29 @@ namespace TaskList
 
         private void AddProject(string name)
         {
-            tasks[name] = new List<Task>();
+            if (tasks.Any(tasks => tasks.Name == name))
+            {
+                console.WriteLine($"A project with the name \"{name}\" already exists.");
+                return;
+            }
+            tasks.Add(new Project(name));
         }
 
         private void AddTask(string project, string description)
         {
-            if (!tasks.TryGetValue(project, out IList<Task> projectTasks))
+            if (!tasks.Any(tasks => tasks.Name == project))
             {
                 console.WriteLine($"Could not find a project with the name \"{project}\".");
                 return;
             }
-            projectTasks.Add(new Task { Id = NextId(), Description = description, Done = false });
+
+            tasks.First(tasks => tasks.Name == project).AddTask(
+                new Task
+                {
+                    Id = NextId(),
+                    Description = description,
+                    Done = false
+                });
         }
 
         private void Check(string idString)
@@ -171,13 +183,13 @@ namespace TaskList
 
         private void ViewByDeadline()
         {
-            var tasksWithoutDeadlines = tasks.Where(kvp => kvp.Value.Any(task => !task.Deadline.HasValue))
+            var tasksWithoutDeadlines = tasks.Where(kvp => kvp.Tasks.Any(task => !task.Deadline.HasValue))
                 .ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value.Where(task => !task.Deadline.HasValue).ToList());
+                    kvp => kvp.Name,
+                    kvp => kvp.Tasks.Where(task => !task.Deadline.HasValue).ToList());
 
-            var sortedTasks = tasks.SelectMany(project =>
-            project.Value.Select(task => new { ProjectName = project.Key, Task = task }))
+            var tasksWithDeadlines = tasks.SelectMany(project =>
+            project.Tasks.Select(task => new { ProjectName = project.Name, Task = task }))
                 .Where(x => x.Task.Deadline.HasValue)
                 .GroupBy(x => x.Task.Deadline.Value.Date)
                 .OrderBy(group => group.Key)
@@ -188,9 +200,9 @@ namespace TaskList
                         projectGroup => projectGroup.Key,
                         projectGroup => projectGroup.Select(t => t.Task).ToList()));
 
-            foreach (var project in sortedTasks)
+            foreach (var project in tasksWithDeadlines)
             {
-                console.WriteLine(project.Key.ToString() + ":");
+                console.WriteLine(project.Key + ":");
                 WriteTasksByDeadline(project.Value);
                 console.WriteLine();
             }
@@ -232,7 +244,7 @@ namespace TaskList
             return commandLine.Split(" ".ToCharArray(), 2);
         }
 
-        private void WriteTasks(IList<Task> tasks)
+        private void WriteTasks(IList<ITask> tasks)
         {
             foreach (var task in tasks)
             {
@@ -242,11 +254,11 @@ namespace TaskList
             }
         }
 
-        private void WriteTasksByDeadline(IDictionary<string, List<Task>> tasks)
+        private void WriteTasksByDeadline(IDictionary<string, List<ITask>> tasks)
         {
             foreach (var project in tasks)
             {
-                console.WriteLine($"    {project.Key.ToString()}:");
+                console.WriteLine($"    {project.Key}:");
                 foreach (var task in project.Value)
                 {
                     console.WriteLine($"        {task.Id}: {task.Description}");
@@ -254,10 +266,10 @@ namespace TaskList
             }
         }
 
-        private Task? FindTaskById(string idString)
+        private ITask? FindTaskById(string idString)
         {
             int id = int.Parse(idString);
-            return tasks.Select(project => project.Value.FirstOrDefault(task => task.Id == id))
+            return tasks.Select(project => project.Tasks.FirstOrDefault(task => task.Id == id))
                 .Where(task => task != null)
                 .FirstOrDefault();
         }
