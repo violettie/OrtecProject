@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using TaskList.Interfaces;
 
 namespace TaskList
 {
@@ -10,10 +7,9 @@ namespace TaskList
         private const string QUIT = "quit";
         public static readonly string startupText = "Welcome to TaskList! Type 'help' for available commands.";
 
-        private readonly IDictionary<string, IList<Task>> tasks = new Dictionary<string, IList<Task>>();
         private readonly IConsole console;
 
-        private long lastId = 0;
+        private TaskListCore taskListCore;
 
         public static void Main(string[] args)
         {
@@ -23,6 +19,7 @@ namespace TaskList
         public TaskList(IConsole console)
         {
             this.console = console;
+            this.taskListCore = new TaskListCore();
         }
 
         public void Run()
@@ -42,7 +39,7 @@ namespace TaskList
 
         private void Execute(string commandLine)
         {
-            var commandRest = commandLine.Split(" ".ToCharArray(), 2);
+            var commandRest = SplitCommandLine(commandLine);
             var command = commandRest[0];
             switch (command)
             {
@@ -78,40 +75,29 @@ namespace TaskList
 
         private void Show()
         {
-            foreach (var project in tasks)
+            var projects = taskListCore.Projects;
+            foreach (var project in projects)
             {
-                console.WriteLine(project.Key);
-                foreach (var task in project.Value)
-                {
-                    var deadlineString = task.Deadline.HasValue ? " " + task.Deadline.ToString() : "";
-                    console.WriteLine($"    [{(task.Done ? 'x' : ' ')}] " +
-                        $"{task.Id}: {task.Description}{deadlineString}");
-                }
+                console.WriteLine(project.Name);
+                WriteTasks(project.Tasks);
                 console.WriteLine();
             }
         }
 
         private void Today()
         {
-            foreach (var project in tasks)
+            var todaysProjects = taskListCore.GetTodaysTasks();
+            foreach (var project in todaysProjects)
             {
-                var todaysTasks = project.Value.Where(t => t.Deadline != null
-                    && t.Deadline.Value.Date == DateTime.Now.Date).ToList();
-
                 console.WriteLine(project.Key);
-                foreach (var task in todaysTasks)
-                {
-                    var deadlineString = task.Deadline.HasValue ? " " + task.Deadline.ToString() : "";
-                    console.WriteLine($"    [{(task.Done ? 'x' : ' ')}] " +
-                        $"{task.Id}: {task.Description}{deadlineString}");
-                }
+                WriteTasks(project.Value);
                 console.WriteLine();
             }
         }
 
         private void Add(string commandLine)
         {
-            var subcommandRest = commandLine.Split(" ".ToCharArray(), 2);
+            var subcommandRest = SplitCommandLine(commandLine);
             var subcommand = subcommandRest[0];
             if (subcommand == "project")
             {
@@ -119,24 +105,29 @@ namespace TaskList
             }
             else if (subcommand == "task")
             {
-                var projectTask = subcommandRest[1].Split(" ".ToCharArray(), 2);
+                var projectTask = SplitCommandLine(subcommandRest[1]);
                 AddTask(projectTask[0], projectTask[1]);
             }
         }
 
         private void AddProject(string name)
         {
-            tasks[name] = new List<Task>();
+            var success = taskListCore.AddProject(name);
+            if (!success)
+            {
+                console.WriteLine($"A project with the name \"{name}\" already exists.");
+                return;
+            }
         }
 
         private void AddTask(string project, string description)
         {
-            if (!tasks.TryGetValue(project, out IList<Task> projectTasks))
+            var success = taskListCore.AddTask(project, description);
+            if (!success)
             {
-                Console.WriteLine("Could not find a project with the name \"{0}\".", project);
+                console.WriteLine($"Could not find a project with the name \"{project}\".");
                 return;
             }
-            projectTasks.Add(new Task { Id = NextId(), Description = description, Done = false });
         }
 
         private void Check(string idString)
@@ -151,38 +142,28 @@ namespace TaskList
 
         private void SetDone(string idString, bool done)
         {
-            int id = int.Parse(idString);
-            var identifiedTask = tasks
-                .Select(project => project.Value.FirstOrDefault(task => task.Id == id))
-                .Where(task => task != null)
-                .FirstOrDefault();
-            if (identifiedTask == null)
+            var success = taskListCore.MarkTaskAsDone(done, idString);
+            if (!success)
             {
-                console.WriteLine("Could not find a task with an ID of {0}.", id);
+                console.WriteLine($"Could not find a task with an ID of {idString}.");
                 return;
             }
-
-            identifiedTask.Done = done;
         }
 
         private void AddDeadline(string commandLine)
         {
-            var subcommandRest = commandLine.Split(" ".ToCharArray(), 2);
+            var subcommandRest = SplitCommandLine(commandLine);
             string deadline = subcommandRest[1];
             string idString = subcommandRest[0];
+
             if (DateTime.TryParse(deadline, out DateTime deadlineDate))
             {
-                int id = int.Parse(idString);
-                var identifiedTask = tasks
-                    .Select(project => project.Value.FirstOrDefault(task => task.Id == id))
-                    .Where(task => task != null)
-                    .FirstOrDefault();
-                if (identifiedTask == null)
+                var success = taskListCore.AddDeadline(idString, deadlineDate);
+                if (!success)
                 {
-                    console.WriteLine("Could not find a task with an ID of {0}.", id);
+                    console.WriteLine($"Could not find a task with an ID of {idString}.");
                     return;
                 }
-                identifiedTask.Deadline = deadlineDate;
             }
             else
             {
@@ -192,48 +173,21 @@ namespace TaskList
 
         private void ViewByDeadline()
         {
-            var tasksWithoutDeadlines = tasks.Where(kvp => kvp.Value.Any(task => !task.Deadline.HasValue))
-                .ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value.Where(task => !task.Deadline.HasValue).ToList());
+            var tasksWithoutDeadlines = taskListCore.FindTasksWithoutDeadlines();
 
-            var sortedTasks = tasks.SelectMany(project =>
-            project.Value.Select(task => new { ProjectName = project.Key, Task = task }))
-                .Where(x => x.Task.Deadline.HasValue)
-                .GroupBy(x => x.Task.Deadline.Value.Date)
-                .OrderBy(group => group.Key)
-                .ToDictionary(
-                    group => group.Key.ToShortDateString(),
-                    group => group.GroupBy(p => p.ProjectName)
-                    .ToDictionary(
-                        projectGroup => projectGroup.Key,
-                        projectGroup => projectGroup.Select(t => t.Task).ToList()));
+            var tasksWithDeadlines = taskListCore.FindTasksWithDeadlines();
 
-            foreach (var project in sortedTasks)
+            foreach (var project in tasksWithDeadlines)
             {
-                console.WriteLine(project.Key.ToString() + ":");
-                foreach (var task in project.Value)
-                {
-                    console.WriteLine($"    {task.Key.ToString()}:");
-                    foreach (var subTask in task.Value)
-                    {
-                        console.WriteLine($"        {subTask.Id}: {subTask.Description}");
-                    }
-                }
+                console.WriteLine(project.Key + ":");
+                WriteTasksByDeadline(project.Value);
                 console.WriteLine();
             }
 
             if (tasksWithoutDeadlines.Count > 0)
             {
                 console.WriteLine("No deadline:");
-                foreach (var project in tasksWithoutDeadlines)
-                {
-                    console.WriteLine($"    {project.Key.ToString()}:");
-                    foreach (var task in project.Value)
-                    {
-                        console.WriteLine($"        {task.Id}: {task.Description}");
-                    }
-                }
+                WriteTasksByDeadline(tasksWithoutDeadlines);
                 console.WriteLine();
             }
         }
@@ -254,12 +208,34 @@ namespace TaskList
 
         private void Error(string command)
         {
-            console.WriteLine("I don't know what the command \"{0}\" is.", command);
+            console.WriteLine($"I don't know what the command \"{command}\" is.");
         }
 
-        private long NextId()
+        private string[] SplitCommandLine(string commandLine)
         {
-            return ++lastId;
+            return commandLine.Split(" ".ToCharArray(), 2);
+        }
+
+        private void WriteTasks(IList<ITask> tasks)
+        {
+            foreach (var task in tasks)
+            {
+                var deadlineString = task.Deadline.HasValue ? " " + task.Deadline.ToString() : "";
+                console.WriteLine($"    [{(task.Done ? 'x' : ' ')}] " +
+                    $"{task.Id}: {task.Description}{deadlineString}");
+            }
+        }
+
+        private void WriteTasksByDeadline(IDictionary<string, List<ITask>> tasks)
+        {
+            foreach (var project in tasks)
+            {
+                console.WriteLine($"    {project.Key}:");
+                foreach (var task in project.Value)
+                {
+                    console.WriteLine($"        {task.Id}: {task.Description}");
+                }
+            }
         }
     }
 }

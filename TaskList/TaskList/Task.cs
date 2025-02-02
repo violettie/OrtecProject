@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
-
 namespace TaskList
 {
-	public class Task
-	{
+	public class Task : ITask
+    {
 		public long Id { get; set; }
 
 		public string Description { get; set; }

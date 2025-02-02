@@ -1,12 +1,8 @@
-using NUnit.Framework;
-using System;
-using System.IO;
-using System.IO.Pipes;
-using System.Threading;
+using TaskList.Interfaces;
 
 namespace TaskList
 {
-	public class FakeConsole : IConsole
+    public class FakeConsole : IConsole
 	{
 		private readonly TextReader inputReader;
 		private readonly TextWriter inputWriter;
