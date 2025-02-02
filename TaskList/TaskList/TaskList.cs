@@ -7,10 +7,9 @@ namespace TaskList
         private const string QUIT = "quit";
         public static readonly string startupText = "Welcome to TaskList! Type 'help' for available commands.";
 
-        private readonly IList<IProject> tasks = new List<IProject>();
         private readonly IConsole console;
 
-        private long lastId = 0;
+        private TaskListCore taskListCore;
 
         public static void Main(string[] args)
         {
@@ -20,6 +19,7 @@ namespace TaskList
         public TaskList(IConsole console)
         {
             this.console = console;
+            this.taskListCore = new TaskListCore();
         }
 
         public void Run()
@@ -75,7 +75,8 @@ namespace TaskList
 
         private void Show()
         {
-            foreach (var project in tasks)
+            var projects = taskListCore.Projects;
+            foreach (var project in projects)
             {
                 console.WriteLine(project.Name);
                 WriteTasks(project.Tasks);
@@ -85,13 +86,11 @@ namespace TaskList
 
         private void Today()
         {
-            foreach (var project in tasks)
+            var todaysProjects = taskListCore.GetTodaysTasks();
+            foreach (var project in todaysProjects)
             {
-                var todaysTasks = project.Tasks.Where(t => t.Deadline != null
-                    && t.Deadline.Value.Date == DateTime.Now.Date).ToList();
-
-                console.WriteLine(project.Name);
-                WriteTasks(todaysTasks);
+                console.WriteLine(project.Key);
+                WriteTasks(project.Value);
                 console.WriteLine();
             }
         }
@@ -113,29 +112,22 @@ namespace TaskList
 
         private void AddProject(string name)
         {
-            if (tasks.Any(tasks => tasks.Name == name))
+            var success = taskListCore.AddProject(name);
+            if (!success)
             {
                 console.WriteLine($"A project with the name \"{name}\" already exists.");
                 return;
             }
-            tasks.Add(new Project(name));
         }
 
         private void AddTask(string project, string description)
         {
-            if (!tasks.Any(tasks => tasks.Name == project))
+            var success = taskListCore.AddTask(project, description);
+            if (!success)
             {
                 console.WriteLine($"Could not find a project with the name \"{project}\".");
                 return;
             }
-
-            tasks.First(tasks => tasks.Name == project).AddTask(
-                new Task
-                {
-                    Id = NextId(),
-                    Description = description,
-                    Done = false
-                });
         }
 
         private void Check(string idString)
@@ -150,14 +142,12 @@ namespace TaskList
 
         private void SetDone(string idString, bool done)
         {
-            var identifiedTask = FindTaskById(idString);
-            if (identifiedTask == null)
+            var success = taskListCore.MarkTaskAsDone(done, idString);
+            if (!success)
             {
                 console.WriteLine($"Could not find a task with an ID of {idString}.");
                 return;
             }
-
-            identifiedTask.Done = done;
         }
 
         private void AddDeadline(string commandLine)
@@ -165,15 +155,15 @@ namespace TaskList
             var subcommandRest = SplitCommandLine(commandLine);
             string deadline = subcommandRest[1];
             string idString = subcommandRest[0];
+
             if (DateTime.TryParse(deadline, out DateTime deadlineDate))
             {
-                var identifiedTask = FindTaskById(idString);
-                if (identifiedTask == null)
+                var success = taskListCore.AddDeadline(idString, deadlineDate);
+                if (!success)
                 {
                     console.WriteLine($"Could not find a task with an ID of {idString}.");
                     return;
                 }
-                identifiedTask.Deadline = deadlineDate;
             }
             else
             {
@@ -183,22 +173,9 @@ namespace TaskList
 
         private void ViewByDeadline()
         {
-            var tasksWithoutDeadlines = tasks.Where(kvp => kvp.Tasks.Any(task => !task.Deadline.HasValue))
-                .ToDictionary(
-                    kvp => kvp.Name,
-                    kvp => kvp.Tasks.Where(task => !task.Deadline.HasValue).ToList());
+            var tasksWithoutDeadlines = taskListCore.FindTasksWithoutDeadlines();
 
-            var tasksWithDeadlines = tasks.SelectMany(project =>
-            project.Tasks.Select(task => new { ProjectName = project.Name, Task = task }))
-                .Where(x => x.Task.Deadline.HasValue)
-                .GroupBy(x => x.Task.Deadline.Value.Date)
-                .OrderBy(group => group.Key)
-                .ToDictionary(
-                    group => group.Key.ToShortDateString(),
-                    group => group.GroupBy(p => p.ProjectName)
-                    .ToDictionary(
-                        projectGroup => projectGroup.Key,
-                        projectGroup => projectGroup.Select(t => t.Task).ToList()));
+            var tasksWithDeadlines = taskListCore.FindTasksWithDeadlines();
 
             foreach (var project in tasksWithDeadlines)
             {
@@ -234,11 +211,6 @@ namespace TaskList
             console.WriteLine($"I don't know what the command \"{command}\" is.");
         }
 
-        private long NextId()
-        {
-            return ++lastId;
-        }
-
         private string[] SplitCommandLine(string commandLine)
         {
             return commandLine.Split(" ".ToCharArray(), 2);
@@ -264,14 +236,6 @@ namespace TaskList
                     console.WriteLine($"        {task.Id}: {task.Description}");
                 }
             }
-        }
-
-        private ITask? FindTaskById(string idString)
-        {
-            int id = int.Parse(idString);
-            return tasks.Select(project => project.Tasks.FirstOrDefault(task => task.Id == id))
-                .Where(task => task != null)
-                .FirstOrDefault();
         }
     }
 }

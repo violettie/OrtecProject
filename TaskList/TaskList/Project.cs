@@ -13,4 +13,14 @@ public class Project : IProject
     {
         Tasks.Add(task);
     }
+
+    public IList<ITask> FindTasksWithDeadlines()
+    {
+        return Tasks.Where(t => t.Deadline != null).OrderBy(task => task.Deadline).ToList();
+    }
+
+    public IList<ITask> FindTasksWithoutDeadlines()
+    {
+        return Tasks.Where(t => t.Deadline == null).ToList();
+    }
 }
