@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace TaskList
+﻿namespace TaskList
 {
     public class TaskListCore
     {
@@ -21,7 +19,7 @@ namespace TaskList
             }
 
             Projects.First(projects => projects.Name == project).AddTask(
-                new Task
+                new ProjectTask
                 {
                     Id = NextId(),
                     Description = description,
@@ -42,9 +40,9 @@ namespace TaskList
             return true;
         }
 
-        public Dictionary<string, IList<ITask>> GetTodaysTasks()
+        public Dictionary<string, IList<IProjectTask>> GetTodaysTasks()
         {
-            var todaysTasks = new Dictionary<string, IList<ITask>>();
+            var todaysTasks = new Dictionary<string, IList<IProjectTask>>();
             foreach (var project in projects)
             {
                 var tasks = project.Tasks.Where(task => task.Deadline.HasValue && task.Deadline.Value.Date == DateTime.Today).ToList();
@@ -56,7 +54,7 @@ namespace TaskList
             return todaysTasks;
         }
 
-        public Dictionary<string, Dictionary<string, List<ITask>>> FindTasksWithDeadlines()
+        public Dictionary<string, Dictionary<string, List<IProjectTask>>> FindTasksWithDeadlines()
         {
             var tasksWithDeadlines = new List<IProject>();
             foreach (var project in projects)
@@ -84,9 +82,9 @@ namespace TaskList
                         projectGroup => projectGroup.Select(t => t.Task).ToList()));
         }
 
-        public Dictionary<string, List<ITask>> FindTasksWithoutDeadlines()
+        public Dictionary<string, List<IProjectTask>> FindTasksWithoutDeadlines()
         {
-            var tasksWithoutDeadlines = new Dictionary<string, List<ITask>>();
+            var tasksWithoutDeadlines = new Dictionary<string, List<IProjectTask>>();
 
             foreach (var project in projects)
             {
@@ -124,7 +122,7 @@ namespace TaskList
             return true;
         }
 
-        public ITask? FindTaskById(string idString)
+        public IProjectTask? FindTaskById(string idString)
         {
             if (int.TryParse(idString, out int id))
             {

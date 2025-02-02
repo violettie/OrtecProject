@@ -216,7 +216,7 @@ namespace TaskList
             return commandLine.Split(" ".ToCharArray(), 2);
         }
 
-        private void WriteTasks(IList<ITask> tasks)
+        private void WriteTasks(IList<IProjectTask> tasks)
         {
             foreach (var task in tasks)
             {
@@ -226,7 +226,7 @@ namespace TaskList
             }
         }
 
-        private void WriteTasksByDeadline(IDictionary<string, List<ITask>> tasks)
+        private void WriteTasksByDeadline(IDictionary<string, List<IProjectTask>> tasks)
         {
             foreach (var project in tasks)
             {

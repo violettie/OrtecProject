@@ -1,8 +1,9 @@
 public interface IProject
 {
+    Guid Id { get; }
     string Name { get; }
-    IList<ITask> Tasks { get; }
-    void AddTask(ITask task);
-    IList<ITask> FindTasksWithoutDeadlines();
-    IList<ITask> FindTasksWithDeadlines();
+    IList<IProjectTask> Tasks { get; }
+    void AddTask(IProjectTask task);
+    IList<IProjectTask> FindTasksWithoutDeadlines();
+    IList<IProjectTask> FindTasksWithDeadlines();
 }

@@ -1,6 +1,6 @@
 namespace TaskList
 {
-	public class Task : ITask
+	public class ProjectTask : IProjectTask
     {
 		public long Id { get; set; }
 

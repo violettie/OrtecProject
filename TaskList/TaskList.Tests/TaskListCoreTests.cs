@@ -270,7 +270,7 @@ public class TaskListCoreTests
         var taskDescription = "Task";
         taskListCore.AddProject(projectName);
         taskListCore.AddTask(projectName, taskDescription);
-        
+
         // Act
         var task = taskListCore.FindTaskById("1");
        
@@ -435,12 +435,14 @@ public class TaskListCoreTests
         taskListCore.AddProject(projectName);
         taskListCore.AddTask(projectName, taskDescription);
 
+        var createdProject = taskListCore.Projects.First(p => p.Name == projectName);
+
         taskListCore.AddTask(projectName, taskDescription + " 2");
-        var taskId2 = taskListCore.Projects.First(p => p.Name == projectName).Tasks.Last().Id;
+        var taskId2 = createdProject.Tasks.First(task => task.Description == taskDescription + " 2").Id;
         taskListCore.AddDeadline(taskId2.ToString(), DateTime.Today.AddDays(1));
 
         taskListCore.AddTask(projectName, taskDescription + " 3");
-        var taskId3 = taskListCore.Projects.First(p => p.Name == projectName).Tasks.Last().Id;
+        var taskId3 = createdProject.Tasks.First(task => task.Description == taskDescription + " 3").Id;
         taskListCore.AddDeadline(taskId3.ToString(), DateTime.Today.AddDays(-1));
 
         // Act
