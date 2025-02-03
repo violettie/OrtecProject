@@ -11,7 +11,7 @@
 
         public IList<IProject> Projects => projects;
 
-        public bool AddTask(string project, string description)
+        public async Task<bool> AddTask(string project, string description)
         {
             if (!Projects.Any(proj => proj.Name == project))
             {
@@ -29,7 +29,7 @@
             return true;
         }
 
-        public bool AddProject(string name)
+        public async Task<bool> AddProject(string name)
         {
             if (projects.Any(project => project.Name == name))
             {
@@ -40,7 +40,7 @@
             return true;
         }
 
-        public Dictionary<string, IList<IProjectTask>> GetTodaysTasks()
+        public async Task<Dictionary<string, IList<IProjectTask>>> GetTodaysTasks()
         {
             var todaysTasks = new Dictionary<string, IList<IProjectTask>>();
             foreach (var project in projects)
@@ -54,7 +54,7 @@
             return todaysTasks;
         }
 
-        public Dictionary<string, Dictionary<string, List<IProjectTask>>> FindTasksWithDeadlines()
+        public async Task<Dictionary<string, Dictionary<string, List<IProjectTask>>>> FindTasksWithDeadlines()
         {
             var tasksWithDeadlines = new List<IProject>();
             foreach (var project in projects)
@@ -70,7 +70,7 @@
                 }
             }
 
-            return tasksWithDeadlines.SelectMany(project =>
+            var tasks = tasksWithDeadlines.SelectMany(project =>
             project.Tasks.Select(task => new { ProjectName = project.Name, Task = task }))
                 .GroupBy(x => x.Task.Deadline.Value.Date)
                 .OrderBy(group => group.Key)
@@ -80,15 +80,17 @@
                     .ToDictionary(
                         projectGroup => projectGroup.Key,
                         projectGroup => projectGroup.Select(t => t.Task).ToList()));
+
+            return tasks;
         }
 
-        public Dictionary<string, List<IProjectTask>> FindTasksWithoutDeadlines()
+        public async Task<Dictionary<string, List<IProjectTask>>> FindTasksWithoutDeadlines()
         {
             var tasksWithoutDeadlines = new Dictionary<string, List<IProjectTask>>();
 
             foreach (var project in projects)
             {
-                var tasksWithoutDeadline = project.FindTasksWithoutDeadlines();
+                var tasksWithoutDeadline = await Task.Run(() => project.FindTasksWithoutDeadlines());
                 if (tasksWithoutDeadline.Count > 0)
                 {
                     tasksWithoutDeadlines.Add(project.Name, tasksWithoutDeadline.ToList());
@@ -98,9 +100,9 @@
             return tasksWithoutDeadlines;
         }
 
-        public bool AddDeadline(string idString, DateTime deadline)
+        public async Task<bool> AddDeadline(string idString, DateTime deadline)
         {
-            var identifiedTask = FindTaskById(idString);
+            var identifiedTask = await FindTaskById(idString);
             if (identifiedTask == null)
             {
                 return false;
@@ -110,9 +112,9 @@
             return true;
         }
 
-        public bool MarkTaskAsDone(bool complete, string idString)
+        public async Task<bool> MarkTaskAsDone(bool complete, string idString)
         {
-            var identifiedTask = FindTaskById(idString);
+            var identifiedTask = await FindTaskById(idString);
             if (identifiedTask == null)
             {
                 return false;
@@ -122,13 +124,13 @@
             return true;
         }
 
-        public IProjectTask? FindTaskById(string idString)
+        public async Task<IProjectTask?> FindTaskById(string idString)
         {
             if (int.TryParse(idString, out int id))
             {
-                return projects.Select(project => project.Tasks.FirstOrDefault(task => task.Id == id))
+                return await Task.Run(() => projects.Select(project => project.Tasks.FirstOrDefault(task => task.Id == id))
                     .Where(task => task != null)
-                    .FirstOrDefault();
+                    .FirstOrDefault());
             }
             else
             {

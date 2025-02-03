@@ -26,9 +26,9 @@ namespace TaskList
         }
 
         [HttpPost("projects")]
-        public IActionResult AddProject([FromBody] string name)
+        public async Task<IActionResult> AddProject([FromBody] string name)
         {
-            if (_taskListRepository.AddProject(name))
+            if (await _taskListRepository.AddProject(name))
             {
                 return Ok();
             }
@@ -36,21 +36,21 @@ namespace TaskList
         }
 
         [HttpPost("projects/{project}/tasks")]
-        public IActionResult AddTask([FromBody] string description, [FromRoute] string project)
+        public async Task<IActionResult> AddTask([FromBody] string description, [FromRoute] string project)
         {
-            if (_taskListRepository.AddTask(project, description))
+            if (await _taskListRepository.AddTask(project, description))
             {
                 return Ok();
             }
             return BadRequest();
         }
 
-        [HttpPut("projects/{project}/tasks/{task_id}/deadline")]
-        public IActionResult AddDeadline([FromBody] string deadline, [FromRoute] string project, [FromRoute] string task_id)
+        [HttpPut("projects/tasks/{task_id}/deadline")]
+        public async Task<IActionResult> AddDeadline([FromBody] string deadline, [FromRoute] string task_id)
         {
             if (DateTime.TryParse(deadline, out var deadlineDate))
             {
-                if (_taskListRepository.AddDeadline(task_id, deadlineDate))
+                if (await _taskListRepository.AddDeadline(task_id, deadlineDate))
                 {
                     return Ok();
                 }
@@ -59,10 +59,45 @@ namespace TaskList
         }
 
         [HttpGet("view_by_deadline")]
-        public IActionResult ViewByDeadline()
+        public async Task<IActionResult> ViewByDeadline()
         {
-            var tasks = _taskListRepository.ViewByDeadline();
+            var tasks = await _taskListRepository.ViewByDeadline();
             return Ok(tasks);
+        }
+
+        [HttpGet("show")]
+        public async Task<IActionResult> Show()
+        {
+            var projects = await _taskListRepository.GetProjects();
+            return Ok(projects);
+        }
+
+        [HttpGet("today")]
+        public async Task<IActionResult> Today()
+        {
+            var projects = await _taskListRepository.GetTodaysTasks();
+            return Ok(projects);
+        }
+
+        [HttpGet("projects/tasks/{task_id}")]
+        public async Task<IActionResult> GetTaskById([FromRoute] string task_id)
+        {
+            var task = await _taskListRepository.GetTaskById(task_id);
+            if (task == null)
+            {
+                return NotFound();
+            }
+            return Ok(task);
+        }
+
+        [HttpPut("projects/tasks/{task_id}/done")]
+        public async Task<IActionResult> MarkTaskAsDone([FromBody] bool isCompleted, [FromRoute] string task_id)
+        {
+            if (await _taskListRepository.MarkTaskAsDone(isCompleted, task_id))
+            {
+                return Ok();
+            }
+            return NotFound();
         }
     }
 }

@@ -4,24 +4,22 @@ namespace Tasks;
 
 public class TaskListCoreTests
 {
-    //private Mock<IList<IProject>> projectList;
     private TaskListCore taskListCore;
 
     [SetUp]
     public void Setup()
     {
-        //projectList = new Mock<IList<IProject>>();
         taskListCore = new TaskListCore();
     }
 
     [Test]
-    public void AddProject_ShouldAddProject_WhenProjectNameIsValid()
+    public async Task AddProject_ShouldAddProject_WhenProjectNameIsValid()
     {
         // Arrange
         var projectName = "New Project";
 
         // Act
-        bool success = taskListCore.AddProject(projectName);
+        bool success = await taskListCore.AddProject(projectName);
 
         // Assert
         Assert.Multiple(() =>
@@ -32,15 +30,15 @@ public class TaskListCoreTests
     }
 
     [Test]
-    public void AddProject_ShouldNotAddDuplicateProject_WhenProjectNameAlreadyExists()
+    public async Task AddProject_ShouldNotAddDuplicateProject_WhenProjectNameAlreadyExists()
     {
         // Arrange
         var projectName = "Existing Project";
 
         // Act
-        taskListCore.AddProject(projectName);
+        await taskListCore.AddProject(projectName);
 
-        bool success = taskListCore.AddProject(projectName);
+        bool success = await taskListCore.AddProject(projectName);
 
         // Assert
         Assert.Multiple(() =>
@@ -52,15 +50,15 @@ public class TaskListCoreTests
     }
 
     [Test]
-    public void AddTask_ShouldAddTaskToProject_WhenProjectExists()
+    public async Task AddTask_ShouldAddTaskToProject_WhenProjectExists()
     {
         // Arrange
         var projectName = "Existing Project";
         var taskDescription = "New Task";
-        taskListCore.AddProject(projectName);
+        await taskListCore.AddProject(projectName);
 
         // Act
-        bool success = taskListCore.AddTask(projectName, taskDescription);
+        bool success = await taskListCore.AddTask(projectName, taskDescription);
 
         // Assert
         var project = taskListCore.Projects.First(p => p.Name == projectName);
@@ -73,14 +71,14 @@ public class TaskListCoreTests
     }
 
     [Test]
-    public void AddTask_ShouldNotAddTask_WhenProjectDoesNotExist()
+    public async Task AddTask_ShouldNotAddTask_WhenProjectDoesNotExist()
     {
         // Arrange
         var projectName = "Non-Existing Project";
         var taskDescription = "New Task";
 
         // Act
-        bool success = taskListCore.AddTask(projectName, taskDescription);
+        bool success = await taskListCore.AddTask(projectName, taskDescription);
 
         // Assert
         Assert.Multiple(() =>
@@ -91,17 +89,17 @@ public class TaskListCoreTests
     }
 
     [Test]
-    public void MarkTaskAsDone_ShouldMarkTaskAsDone_WhenTaskExists()
+    public async Task MarkTaskAsDone_ShouldMarkTaskAsDone_WhenTaskExists()
     {
         // Arrange
         var projectName = "Project";
         var taskDescription = "Task";
-        taskListCore.AddProject(projectName);
-        taskListCore.AddTask(projectName, taskDescription);
+        await taskListCore.AddProject(projectName);
+        await taskListCore.AddTask(projectName, taskDescription);
         var taskId = taskListCore.Projects.First(p => p.Name == projectName).Tasks.First().Id;
 
         // Act
-        bool success = taskListCore.MarkTaskAsDone(true, taskId.ToString());
+        bool success = await taskListCore.MarkTaskAsDone(true, taskId.ToString());
 
         // Assert
         var task = taskListCore.Projects.First(p => p.Name == projectName).Tasks.First();
@@ -114,51 +112,54 @@ public class TaskListCoreTests
     }
 
     [Test]
-    public void MarkTaskAsDone_ShouldMarkTaskAsNotDone_WhenTaskExists()
+    public async Task MarkTaskAsDone_ShouldMarkTaskAsNotDone_WhenTaskExists()
     {
         // Arrange
         var projectName = "Project";
         var taskDescription = "Task";
-        taskListCore.AddProject(projectName);
-        taskListCore.AddTask(projectName, taskDescription);
+        await taskListCore.AddProject(projectName);
+        await taskListCore.AddTask(projectName, taskDescription);
         var taskId = taskListCore.Projects.First(p => p.Name == projectName).Tasks.First().Id;
 
         // Act
-        bool success = taskListCore.MarkTaskAsDone(false, taskId.ToString());
+        bool success = await taskListCore.MarkTaskAsDone(false, taskId.ToString());
 
-        // Assert
         var task = taskListCore.Projects.First(p => p.Name == projectName).Tasks.First();
-        Assert.That(taskId, Is.EqualTo(task.Id));
-        Assert.IsFalse(task.Done);
-        Assert.IsTrue(success);
+        // Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(taskId, Is.EqualTo(task.Id));
+            Assert.That(task.Done, Is.False);
+            Assert.That(success, Is.True);
+        });
     }
 
     [Test]
-    public void MarkTaskAsDone_ShouldReturnFalse_WhenTaskDoesNotExist()
+    public async Task MarkTaskAsDone_ShouldReturnFalse_WhenTaskDoesNotExist()
     {
         // Arrange
         var nonExistingTaskId = "999";
 
         // Act
-        bool success = taskListCore.MarkTaskAsDone(true, nonExistingTaskId);
+        bool success = await taskListCore.MarkTaskAsDone(true, nonExistingTaskId);
 
         // Assert
-        Assert.IsFalse(success);
+        Assert.That(success, Is.False);
     }
 
     [Test]
-    public void AddDeadline_ShouldAddDeadlineToTask_WhenTaskExists()
+    public async Task AddDeadline_ShouldAddDeadlineToTask_WhenTaskExists()
     {
         // Arrange
         var projectName = "Project";
         var taskDescription = "Task";
-        taskListCore.AddProject(projectName);
-        taskListCore.AddTask(projectName, taskDescription);
+        await taskListCore.AddProject(projectName);
+        await taskListCore.AddTask(projectName, taskDescription);
         var taskId = taskListCore.Projects.First(p => p.Name == projectName).Tasks.First().Id;
         var deadline = DateTime.Today;
 
         // Act
-        bool success = taskListCore.AddDeadline(taskId.ToString(), deadline);
+        bool success = await taskListCore.AddDeadline(taskId.ToString(), deadline);
         
         // Assert
         var task = taskListCore.Projects.First(p => p.Name == projectName).Tasks.First();
@@ -171,108 +172,108 @@ public class TaskListCoreTests
     }
 
     [Test]
-    public void AddDeadline_ShouldReturnFalse_WhenTaskDoesNotExist()
+    public async Task AddDeadline_ShouldReturnFalse_WhenTaskDoesNotExist()
     {
         // Arrange
         var nonExistingTaskId = "999";
         var deadline = DateTime.Today;
         
         // Act
-        bool success = taskListCore.AddDeadline(nonExistingTaskId, deadline);
+        bool success = await taskListCore.AddDeadline(nonExistingTaskId, deadline);
         
         // Assert
-        Assert.IsFalse(success);
+        Assert.That(success, Is.False);
     }
 
     [Test]
-    public void GetTodaysTasks_ShouldReturnTasksWithDeadlinesForToday()
+    public async Task GetTodaysTasks_ShouldReturnTasksWithDeadlinesForToday()
     {
         // Arrange
         var projectName = "Project";
         var taskDescription = "Task";
         var deadline = DateTime.Today;
-        taskListCore.AddProject(projectName);
-        taskListCore.AddTask(projectName, taskDescription);
+        await taskListCore.AddProject(projectName);
+        await taskListCore.AddTask(projectName, taskDescription);
         var taskId = taskListCore.Projects.First(p => p.Name == projectName).Tasks.First().Id;
-        taskListCore.AddDeadline(taskId.ToString(), deadline);
+        await taskListCore.AddDeadline(taskId.ToString(), deadline);
 
         // Act
-        var todaysTasks = taskListCore.GetTodaysTasks();
+        var todaysTasks = await taskListCore.GetTodaysTasks();
 
         // Assert
         Assert.Multiple(() =>
         {
-            Assert.That(todaysTasks.Count, Is.EqualTo(1));
+            Assert.That(todaysTasks, Has.Count.EqualTo(1));
             Assert.That(todaysTasks.ContainsKey(projectName));
-            Assert.That(todaysTasks[projectName].Count, Is.EqualTo(1));
+            Assert.That(todaysTasks[projectName], Has.Count.EqualTo(1));
             Assert.That(todaysTasks[projectName].First().Description, Is.EqualTo(taskDescription));
         });
     }
 
     [Test]
-    public void GetTodaysTasks_ShouldNotReturnTasksWithoutDeadlinesForToday()
+    public async Task GetTodaysTasks_ShouldNotReturnTasksWithoutDeadlinesForToday()
     {
         // Arrange
         var projectName = "Project";
         var taskDescription = "Task";
         var deadline = DateTime.Today.AddDays(1);
-        taskListCore.AddProject(projectName);
-        taskListCore.AddTask(projectName, taskDescription);
+        await taskListCore.AddProject(projectName);
+        await taskListCore.AddTask(projectName, taskDescription);
         var taskId = taskListCore.Projects.First(p => p.Name == projectName).Tasks.First().Id;
-        taskListCore.AddDeadline(taskId.ToString(), deadline);
+        await taskListCore.AddDeadline(taskId.ToString(), deadline);
         
         // Act
-        var todaysTasks = taskListCore.GetTodaysTasks();
+        var todaysTasks = await taskListCore.GetTodaysTasks();
         
         // Assert
         Assert.That(todaysTasks.Count, Is.EqualTo(0));
     }
 
     [Test]
-    public void GetTodaysTasks_ShouldReturnSomeTasks_WhenSomeTasksHaveDeadlinesForToday()
+    public async Task GetTodaysTasks_ShouldReturnSomeTasks_WhenSomeTasksHaveDeadlinesForToday()
     {
         // Arrange
         var projectName = "Project";
         var taskDescription = "Task";
         var deadline = DateTime.Today;
 
-        taskListCore.AddProject(projectName);
-        taskListCore.AddTask(projectName, taskDescription);
+        await taskListCore.AddProject(projectName);
+        await taskListCore.AddTask(projectName, taskDescription);
         var taskId = taskListCore.Projects.First(p => p.Name == projectName).Tasks.First().Id;
-        taskListCore.AddDeadline(taskId.ToString(), deadline);
+        await taskListCore.AddDeadline(taskId.ToString(), deadline);
 
-        taskListCore.AddTask(projectName, taskDescription + " 2");
+        await taskListCore.AddTask(projectName, taskDescription + " 2");
         var taskId2 = taskListCore.Projects.First(p => p.Name == projectName).Tasks.Last().Id;
         taskListCore.AddDeadline(taskId2.ToString(), DateTime.Today.AddDays(1));
 
-        taskListCore.AddTask(projectName, taskDescription + " 3");
+        await taskListCore.AddTask(projectName, taskDescription + " 3");
         var taskId3 = taskListCore.Projects.First(p => p.Name == projectName).Tasks.Last().Id;
-        taskListCore.AddDeadline(taskId2.ToString(), DateTime.Today.AddDays(-1));
+        await taskListCore.AddDeadline(taskId2.ToString(), DateTime.Today.AddDays(-1));
 
         // Act
-        var todaysTasks = taskListCore.GetTodaysTasks();
+        var todaysTasks = await taskListCore.GetTodaysTasks();
 
         // Assert
         Assert.Multiple(() =>
         {
-            Assert.That(todaysTasks.Count, Is.EqualTo(1));
+            Assert.That(todaysTasks, Has.Count.EqualTo(1));
             Assert.That(todaysTasks.ContainsKey(projectName));
-            Assert.That(todaysTasks[projectName].Count, Is.EqualTo(1));
+            Assert.That(todaysTasks[projectName], Has.Count.EqualTo(1));
             Assert.That(todaysTasks[projectName].First().Description, Is.EqualTo(taskDescription));
         });
     }
 
     [Test]
-    public void FindTaskById_ShouldReturnATask_WhenTaskExists()
+    public async Task FindTaskById_ShouldReturnATask_WhenTaskExists()
     {
         // Arrange
         var projectName = "Project";
         var taskDescription = "Task";
-        taskListCore.AddProject(projectName);
-        taskListCore.AddTask(projectName, taskDescription);
+        await taskListCore.AddProject(projectName);
+        await taskListCore.AddTask(projectName, taskDescription);
 
         // Act
-        var task = taskListCore.FindTaskById("1");
+        var task = await taskListCore.FindTaskById("1");
        
         // Assert
         Assert.Multiple(() =>
@@ -284,46 +285,46 @@ public class TaskListCoreTests
     }
 
     [Test]
-    public void FindTaskById_ShouldReturnNull_WhenTaskDoesNotExist()
+    public async Task FindTaskById_ShouldReturnNull_WhenTaskDoesNotExist()
     {
         // Act
-        var task = taskListCore.FindTaskById("1");
+        var task = await taskListCore.FindTaskById("1");
 
         // Assert
         Assert.That(task, Is.Null);
     }
 
     [Test]
-    public void FindTaskById_ShouldReturnNull_WhenTaskIdIsNotANumber()
+    public async Task FindTaskById_ShouldReturnNull_WhenTaskIdIsNotANumber()
     {
         // Act
-        var task = taskListCore.FindTaskById("abc");
+        var task = await taskListCore.FindTaskById("abc");
         // Assert
         Assert.That(task, Is.Null);
     }
 
     [Test]
-    public void FindTasksWithDeadlines_ShouldReturnTasksWithDeadlines()
+    public async Task FindTasksWithDeadlines_ShouldReturnTasksWithDeadlines()
     {
         // Arrange
         var projectName = "Project";
         var taskDescription = "Task";
         var deadline = DateTime.Today;
-        taskListCore.AddProject(projectName);
-        taskListCore.AddTask(projectName, taskDescription);
+        await taskListCore.AddProject(projectName);
+        await taskListCore.AddTask(projectName, taskDescription);
         var taskId = taskListCore.Projects.First(p => p.Name == projectName).Tasks.First().Id;
-        taskListCore.AddDeadline(taskId.ToString(), deadline);
+        await taskListCore.AddDeadline(taskId.ToString(), deadline);
         
         // Act
-        var tasksWithDeadlines = taskListCore.FindTasksWithDeadlines();
+        var tasksWithDeadlines = await taskListCore.FindTasksWithDeadlines();
         
         // Assert
         Assert.Multiple(() =>
         {
-            Assert.That(tasksWithDeadlines.Count, Is.EqualTo(1));
+            Assert.That(tasksWithDeadlines, Has.Count.EqualTo(1));
             Assert.That(tasksWithDeadlines.ContainsKey(DateTime.Today.ToShortDateString()));
-            Assert.That(tasksWithDeadlines[DateTime.Today.ToShortDateString()].Count, Is.EqualTo(1));
-            Assert.That(tasksWithDeadlines[DateTime.Today.ToShortDateString()].Keys.Contains(projectName));
+            Assert.That(tasksWithDeadlines[DateTime.Today.ToShortDateString()], Has.Count.EqualTo(1));
+            Assert.That(tasksWithDeadlines[DateTime.Today.ToShortDateString()].Keys, Does.Contain(projectName));
             
             Assert.That(tasksWithDeadlines[DateTime.Today.ToShortDateString()].
                 GetValueOrDefault(projectName), Has.Count.EqualTo(1));
@@ -334,48 +335,48 @@ public class TaskListCoreTests
     }
 
     [Test]
-    public void FindTasksWithDeadlines_ShouldNotReturnTasksWithoutDeadlines()
+    public async Task FindTasksWithDeadlines_ShouldNotReturnTasksWithoutDeadlines()
     {
         // Arrange
         var projectName = "Project";
         var taskDescription = "Task";
-        taskListCore.AddProject(projectName);
-        taskListCore.AddTask(projectName, taskDescription);
+        await taskListCore.AddProject(projectName);
+        await taskListCore.AddTask(projectName, taskDescription);
 
         // Act
-        var tasksWithDeadlines = taskListCore.FindTasksWithDeadlines();
+        var tasksWithDeadlines = await taskListCore.FindTasksWithDeadlines();
 
         // Assert
-        Assert.That(tasksWithDeadlines.Count, Is.EqualTo(0));
+        Assert.That(tasksWithDeadlines, Is.Empty);
     }
 
     [Test]
-    public void FindTasksWithDeadlines_ShouldReturnSomeTasks_WhenSomeTasksHaveDeadlines()
+    public async Task FindTasksWithDeadlines_ShouldReturnSomeTasks_WhenSomeTasksHaveDeadlines()
     {
         // Arrange
         var projectName = "Project";
         var taskDescription = "Task";
         var deadline = DateTime.Today;
-        taskListCore.AddProject(projectName);
+        await taskListCore.AddProject(projectName);
         
-        taskListCore.AddTask(projectName, taskDescription);
+        await taskListCore.AddTask(projectName, taskDescription);
         var taskId = taskListCore.Projects.First(p => p.Name == projectName).Tasks.First().Id;        
-        taskListCore.AddDeadline(taskId.ToString(), deadline);
+        await taskListCore.AddDeadline(taskId.ToString(), deadline);
         
-        taskListCore.AddTask(projectName, taskDescription + " 2");
+        await taskListCore.AddTask(projectName, taskDescription + " 2");
         
-        taskListCore.AddTask(projectName, taskDescription + " 3");
+        await taskListCore.AddTask(projectName, taskDescription + " 3");
         
         // Act
-        var tasksWithDeadlines = taskListCore.FindTasksWithDeadlines();
+        var tasksWithDeadlines = await taskListCore.FindTasksWithDeadlines();
        
         // Assert
         Assert.Multiple(() =>
         {
-            Assert.That(tasksWithDeadlines.Count, Is.EqualTo(1));
+            Assert.That(tasksWithDeadlines, Has.Count.EqualTo(1));
             Assert.That(tasksWithDeadlines.ContainsKey(DateTime.Today.ToShortDateString()));
-            Assert.That(tasksWithDeadlines[DateTime.Today.ToShortDateString()].Count, Is.EqualTo(1));
-            Assert.That(tasksWithDeadlines[DateTime.Today.ToShortDateString()].Keys.Contains(projectName));
+            Assert.That(tasksWithDeadlines[DateTime.Today.ToShortDateString()], Has.Count.EqualTo(1));
+            Assert.That(tasksWithDeadlines[DateTime.Today.ToShortDateString()].Keys, Does.Contain(projectName));
             
             Assert.That(tasksWithDeadlines[DateTime.Today.ToShortDateString()].
                 GetValueOrDefault(projectName), Has.Count.EqualTo(1));
@@ -386,74 +387,74 @@ public class TaskListCoreTests
     }
 
     [Test]
-    public void FindTasksWithoutDeadlines_ShouldReturnTasksWithoutDeadlines()
+    public async Task FindTasksWithoutDeadlines_ShouldReturnTasksWithoutDeadlines()
     {
         // Arrange
         var projectName = "Project";
         var taskDescription = "Task";
-        taskListCore.AddProject(projectName);
-        taskListCore.AddTask(projectName, taskDescription);
+        await taskListCore.AddProject(projectName);
+        await taskListCore.AddTask(projectName, taskDescription);
 
         // Act
-        var tasksWithoutDeadlines = taskListCore.FindTasksWithoutDeadlines();
+        var tasksWithoutDeadlines = await taskListCore.FindTasksWithoutDeadlines();
 
         // Assert
         Assert.Multiple(() =>
         {
-            Assert.That(tasksWithoutDeadlines.Count, Is.EqualTo(1));
+            Assert.That(tasksWithoutDeadlines, Has.Count.EqualTo(1));
             Assert.That(tasksWithoutDeadlines.ContainsKey(projectName));
-            Assert.That(tasksWithoutDeadlines[projectName].Count, Is.EqualTo(1));
+            Assert.That(tasksWithoutDeadlines[projectName], Has.Count.EqualTo(1));
             Assert.That(tasksWithoutDeadlines[projectName].First().Description, Is.EqualTo(taskDescription));
         });
     }
 
     [Test]
-    public void FindTasksWithoutDeadlines_ShouldNotReturnTasksWithDeadlines()
+    public async Task FindTasksWithoutDeadlines_ShouldNotReturnTasksWithDeadlines()
     {
         // Arrange
         var projectName = "Project";
         var taskDescription = "Task";
         var deadline = DateTime.Today;
-        taskListCore.AddProject(projectName);
-        taskListCore.AddTask(projectName, taskDescription);
+        await taskListCore.AddProject(projectName);
+        await taskListCore.AddTask(projectName, taskDescription);
         var taskId = taskListCore.Projects.First(p => p.Name == projectName).Tasks.First().Id;
-        taskListCore.AddDeadline(taskId.ToString(), deadline);
+        await taskListCore.AddDeadline(taskId.ToString(), deadline);
         
         // Act
-        var tasksWithoutDeadlines = taskListCore.FindTasksWithoutDeadlines();
+        var tasksWithoutDeadlines = await taskListCore.FindTasksWithoutDeadlines();
         
         // Assert
-        Assert.That(tasksWithoutDeadlines.Count, Is.EqualTo(0));
+        Assert.That(tasksWithoutDeadlines, Is.Empty);
     }
 
     [Test]
-    public void FindTasksWithoutDeadlines_ShouldReturnSomeTasks_WhenSomeTasksHaveNoDeadlines()
+    public async Task FindTasksWithoutDeadlines_ShouldReturnSomeTasks_WhenSomeTasksHaveNoDeadlines()
     {
         // Arrange
         var projectName = "Project";
         var taskDescription = "Task";
-        taskListCore.AddProject(projectName);
-        taskListCore.AddTask(projectName, taskDescription);
+        await taskListCore.AddProject(projectName);
+        await taskListCore.AddTask(projectName, taskDescription);
 
         var createdProject = taskListCore.Projects.First(p => p.Name == projectName);
 
-        taskListCore.AddTask(projectName, taskDescription + " 2");
+        await taskListCore.AddTask(projectName, taskDescription + " 2");
         var taskId2 = createdProject.Tasks.First(task => task.Description == taskDescription + " 2").Id;
-        taskListCore.AddDeadline(taskId2.ToString(), DateTime.Today.AddDays(1));
+        await taskListCore.AddDeadline(taskId2.ToString(), DateTime.Today.AddDays(1));
 
-        taskListCore.AddTask(projectName, taskDescription + " 3");
+        await taskListCore.AddTask(projectName, taskDescription + " 3");
         var taskId3 = createdProject.Tasks.First(task => task.Description == taskDescription + " 3").Id;
-        taskListCore.AddDeadline(taskId3.ToString(), DateTime.Today.AddDays(-1));
+        await taskListCore.AddDeadline(taskId3.ToString(), DateTime.Today.AddDays(-1));
 
         // Act
-        var tasksWithoutDeadlines = taskListCore.FindTasksWithoutDeadlines();
+        var tasksWithoutDeadlines = await taskListCore.FindTasksWithoutDeadlines();
 
         // Assert
         Assert.Multiple(() =>
         {
-            Assert.That(tasksWithoutDeadlines.Count, Is.EqualTo(1));
+            Assert.That(tasksWithoutDeadlines, Has.Count.EqualTo(1));
             Assert.That(tasksWithoutDeadlines.ContainsKey(projectName));
-            Assert.That(tasksWithoutDeadlines[projectName].Count, Is.EqualTo(1));
+            Assert.That(tasksWithoutDeadlines[projectName], Has.Count.EqualTo(1));
             Assert.That(tasksWithoutDeadlines[projectName].First().Description, Is.EqualTo(taskDescription));
         });
     }
@@ -469,11 +470,11 @@ public class TaskListCoreTests
     }
 
     [Test]
-    public void Projects_ShouldReturnProjects_WhenProjectsExist()
+    public async Task Projects_ShouldReturnProjects_WhenProjectsExist()
     {
         // Arrange
         var projectName = "Project";
-        taskListCore.AddProject(projectName);
+        await taskListCore.AddProject(projectName);
         
         // Act
         var projects = taskListCore.Projects;
@@ -482,7 +483,7 @@ public class TaskListCoreTests
         Assert.Multiple(() =>
         {
             Assert.That(projects, Is.Not.Empty);
-            Assert.That(projects.Count, Is.EqualTo(1));
+            Assert.That(projects, Has.Count.EqualTo(1));
             Assert.That(projects.First().Name, Is.EqualTo(projectName));
         });
     }

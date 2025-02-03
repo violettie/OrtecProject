@@ -73,7 +73,7 @@ namespace TaskList
             }
         }
 
-        private void Show()
+        private async Task Show()
         {
             var projects = taskListCore.Projects;
             foreach (var project in projects)
@@ -84,9 +84,9 @@ namespace TaskList
             }
         }
 
-        private void Today()
+        private async Task Today()
         {
-            var todaysProjects = taskListCore.GetTodaysTasks();
+            var todaysProjects = taskListCore.GetTodaysTasks().Result;
             foreach (var project in todaysProjects)
             {
                 console.WriteLine(project.Key);
@@ -95,7 +95,7 @@ namespace TaskList
             }
         }
 
-        private void Add(string commandLine)
+        private async Task Add(string commandLine)
         {
             var subcommandRest = SplitCommandLine(commandLine);
             var subcommand = subcommandRest[0];
@@ -110,47 +110,48 @@ namespace TaskList
             }
         }
 
-        private void AddProject(string name)
+        private async Task AddProject(string name)
         {
             var success = taskListCore.AddProject(name);
-            if (!success)
+            if (!success.Result)
             {
                 console.WriteLine($"A project with the name \"{name}\" already exists.");
                 return;
             }
         }
 
-        private void AddTask(string project, string description)
+        private async Task AddTask(string project, string description)
         {
             var success = taskListCore.AddTask(project, description);
-            if (!success)
+            if (!success.Result)
             {
                 console.WriteLine($"Could not find a project with the name \"{project}\".");
                 return;
             }
         }
 
-        private void Check(string idString)
+        private async Task Check(string idString)
         {
             SetDone(idString, true);
         }
 
-        private void Uncheck(string idString)
+        private async Task Uncheck(string idString)
         {
             SetDone(idString, false);
         }
 
-        private void SetDone(string idString, bool done)
+        private async Task SetDone(string idString, bool done)
         {
             var success = taskListCore.MarkTaskAsDone(done, idString);
-            if (!success)
+            
+            if (!success.Result)
             {
                 console.WriteLine($"Could not find a task with an ID of {idString}.");
                 return;
             }
         }
 
-        private void AddDeadline(string commandLine)
+        private async Task AddDeadline(string commandLine)
         {
             var subcommandRest = SplitCommandLine(commandLine);
             string deadline = subcommandRest[1];
@@ -158,7 +159,7 @@ namespace TaskList
 
             if (DateTime.TryParse(deadline, out DateTime deadlineDate))
             {
-                var success = taskListCore.AddDeadline(idString, deadlineDate);
+                var success = taskListCore.AddDeadline(idString, deadlineDate).Result;
                 if (!success)
                 {
                     console.WriteLine($"Could not find a task with an ID of {idString}.");
@@ -171,11 +172,11 @@ namespace TaskList
             }
         }
 
-        private void ViewByDeadline()
+        private async Task ViewByDeadline()
         {
-            var tasksWithoutDeadlines = taskListCore.FindTasksWithoutDeadlines();
+            var tasksWithoutDeadlines = taskListCore.FindTasksWithoutDeadlines().Result;
 
-            var tasksWithDeadlines = taskListCore.FindTasksWithDeadlines();
+            var tasksWithDeadlines = taskListCore.FindTasksWithDeadlines().Result;
 
             foreach (var project in tasksWithDeadlines)
             {

@@ -2,9 +2,13 @@
 {
     public interface ITaskListRepository
     {
-        bool AddProject(string name);
-        bool AddTask(string project, string description);
-        bool AddDeadline(string taskId, DateTime deadline);
-        Dictionary<string, Dictionary<string, List<IProjectTask>>> ViewByDeadline();
+        Task<bool> AddProject(string name);
+        Task<bool> AddTask(string project, string description);
+        Task<bool> AddDeadline(string taskId, DateTime deadline);
+        Task<Dictionary<string, Dictionary<string, List<IProjectTask>>>> ViewByDeadline();
+        Task<Dictionary<string, IList<IProjectTask>>> GetTodaysTasks();
+        Task<IList<IProject>> GetProjects();
+        Task<IProjectTask?> GetTaskById(string taskId);
+        Task<bool> MarkTaskAsDone(bool isComplete, string taskId);
     }
 }
